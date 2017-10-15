@@ -2,11 +2,12 @@
 from __future__ import print_function
 from __future__ import division
 
+import codecs
+
 import numpy as np
 import json
 import os
 import argparse
-import cPickle as pickle
 
 from os import path
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -14,9 +15,13 @@ from tqdm import tqdm
 from unidecode import unidecode
 
 from utils import CoreNLP_path, get_glove_file_path
-from stanford_corenlp_pywrapper import CoreNLP
+from stanford_corenlp_pywrapper.sockwrap import CoreNLP
 from gensim.models import KeyedVectors
 from keras.preprocessing.sequence import pad_sequences
+try:
+    import cPickle as pickle
+except ImportError:
+    import _pickle as pickle
 
 
 def CoreNLP_tokenizer():
@@ -34,6 +39,50 @@ def CoreNLP_tokenizer():
         return tokens, char_offsets
 
     return tokenize_context
+
+
+def initialize_fasttext(fasttext_path, fasttext_train_data_path='data/fasttext_train_data.txt'):
+    import fasttext
+
+    if fasttext_path.endswith('.bin'):
+        fasttext_path = fasttext_path.replace('.bin', '')
+
+    # Train fasttext if it's not present
+    if not path.exists(fasttext_path + '.bin'):
+        print('No FastText model found at %s', fasttext_path)
+        print('Starting FastText model training...')
+
+        # Create data for training if there isn't one
+        if not os.path.exists(fasttext_train_data_path):
+            print('Preparing data for training...', end='')
+            fasttext_data = []
+
+            for sample in tqdm(samples):
+                tokens, char_offsets = tokenize(sample['context'])
+                fasttext_data.append(' '.join(tokens))
+                tokens, char_offsets = tokenize(sample['question'])
+                fasttext_data.append(' '.join(tokens))
+
+            with codecs.open(fasttext_train_data_path, 'w', 'utf-8') as f:
+                f.write('\n'.join(fasttext_data))
+            print('Done')
+
+        print('Started training...')
+        model = fasttext.skipgram(fasttext_train_data_path, fasttext_path)
+        print('Saving fasttext model to %s ...', fasttext_path, end='')
+        print('Done')
+    else:
+        print('Loading fasttext model...', end='')
+        model = fasttext.load_model(fasttext_path + '.bin')
+        print('Done')
+
+    def get_word_vector(word):
+        try:
+            return model[word]
+        except KeyError:
+            return np.zeros(model.dim)
+
+    return get_word_vector
 
 
 def word2vec(word2vec_path):
@@ -60,13 +109,16 @@ def word2vec(word2vec_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--word2vec_path', type=str,
-                        default='data/word2vec_from_glove_300.vec',
+    parser.add_argument('--word2vec_path', type=str, default='data/word2vec_from_glove_300.vec',
                         help='Word2Vec vectors file path')
     parser.add_argument('--outfile', type=str, default='data/tmp.pkl',
                         help='Desired path to output pickle')
     parser.add_argument('--include_str', action='store_true',
-                        help='Include strings')
+                        help='Include strings: available only if we are obtaining word vectors from GLOVE')
+    parser.add_argument('--fasttext_path', type=str,  # default='./fasttext_model',
+                        help='Path to fastText model, if there is no such model, it will be trained and saved '
+                             'automatically')
+
     parser.add_argument('data', type=str, help='Data json')
     args = parser.parse_args()
 
@@ -82,7 +134,13 @@ if __name__ == '__main__':
     tokenize = CoreNLP_tokenizer()
     print('Done!')
 
-    word_vector = word2vec(args.word2vec_path)
+    # Determine which model to use fasttext or word2vec (Glove)
+    if args.fasttext_path is not None:
+        if args.include_str:
+            raise ValueError('Include string is available only for word2vec')
+        word_vector = initialize_fasttext(fasttext_path=args.fasttext_path)
+    else:
+        word_vector = word2vec(word2vec_path=args.word2vec_path)
 
     def parse_sample(context, question, answer_start, answer_end, **kwargs):
         inputs = []
@@ -135,8 +193,7 @@ if __name__ == '__main__':
     def transpose(x):
         return map(list, zip(*x))
 
-    data = [transpose(input) for input in transpose(samples)]
-
+    data = [transpose(sample) for sample in transpose(samples)]
 
     print('Writing to file {}... '.format(args.outfile), end='')
     with open(args.outfile, 'wb') as fd:
