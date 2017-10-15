@@ -18,6 +18,7 @@ np.random.seed(10)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--hdim', default=75, help='Model to evaluate', type=int)
+parser.add_argument('--word_vector_dim', default=100, help='Size of a word-vector', type=int)
 parser.add_argument('--batch_size', default=70, help='Batch size', type=int)
 parser.add_argument('--nb_epochs', default=50, help='Number of Epochs', type=int)
 parser.add_argument('--optimizer', default='Adadelta', help='Optimizer', type=str)
@@ -35,7 +36,8 @@ parser.add_argument('--valid_data', default='data/valid_data.pkl', help='Validat
 args = parser.parse_args()
 
 print('Creating the model...', end='')
-model = RNet(hdim=args.hdim, dropout_rate=args.dropout, N=None, M=None,
+word_vector_dim = args.word_vector_dim
+model = RNet(hdim=args.hdim, dropout_rate=args.dropout, N=None, M=None, word2vec_dim=word_vector_dim,
              char_level_embeddings=args.char_level_embeddings)
 print('Done!')
 
@@ -53,7 +55,7 @@ valid_data = load_dataset(args.valid_data)
 print('Done!')
 
 print('Preparing generators...', end='')
-maxlen = [300, 300, 30, 30] if args.char_level_embeddings else [300, 30]
+maxlen = [word_vector_dim, word_vector_dim, 30, 30] if args.char_level_embeddings else [word_vector_dim, 30]
 
 train_data_gen = BatchGen(*train_data, batch_size=args.batch_size, shuffle=False, group=True, maxlen=maxlen)
 valid_data_gen = BatchGen(*valid_data, batch_size=args.batch_size, shuffle=False, group=True, maxlen=maxlen)
