@@ -18,7 +18,7 @@ np.random.seed(10)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--hdim', default=75, help='Model to evaluate', type=int)
-parser.add_argument('--word_vector_dim', default=100, help='Size of a word-vector', type=int)
+parser.add_argument('--word_vector_dim', default=300, help='Size of a word-vector', type=int)
 parser.add_argument('--batch_size', default=70, help='Batch size', type=int)
 parser.add_argument('--nb_epochs', default=50, help='Number of Epochs', type=int)
 parser.add_argument('--optimizer', default='Adadelta', help='Optimizer', type=str)
