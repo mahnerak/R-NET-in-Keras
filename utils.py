@@ -48,20 +48,30 @@ def get_glove_file_path():
 
 def get_fasttext_model_path(target_path=None):
 
+    # Validate target_path
     if target_path is None:
-        target_path = path.join(path.abspath(path.dirname(__file__)), 'lib')
-    elif target_path.endswith('.bin'):
-        target_path = target_path.replace('.bin', '')
+        target_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'lib')
+        filename = 'wiki.simple'
+    elif not os.path.isdir(target_path):
+        # If there is a ready fasttext model, then return it
+        if os.path.exists(target_path):
+            return target_path
 
-    if not os.path.exists(target_path + '.bin'):
-        fname = '/tmp/wiki.en.zip'
-        get_file(fname,
-                 origin='https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.en.zip',
-                 cache_dir=target_path,
-                 cache_subdir='',
-                 extract=True)
+        target_path, filename = os.path.split(target_path)
+        filename = filename.replace('.bin', '')
 
+    fname = '/tmp/wiki.simple.zip'
+    get_file(fname,
+             origin='https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.simple.zip',
+             cache_dir=target_path,
+             cache_subdir='',
+             extract=True)
+
+    target_path += filename
+    if os.path.exists(target_path + '.bin'):
         os.remove(fname)
         os.remove(target_path + '.vec')
+    else:
+        raise FileNotFoundError('binary file of fasttext wasnt extracted properly')
 
     return target_path + '.bin'
