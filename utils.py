@@ -8,10 +8,12 @@ import numpy as np
 from os import path
 from keras.utils.data_utils import get_file
 
+
 def custom_objects():
     from layers import *
     from model import *
     return locals()
+
 
 def CoreNLP_path():
     SERVER = 'http://nlp.stanford.edu/software/'
@@ -93,18 +95,26 @@ class FastText(object):
         result = self.model.stdout.readline()
         result = result[len(item):]
         result = np.fromstring(result, dtype=np.float32, sep=' ')
-        print(result)
+        self.vector_size = len(result)
+        print('Length of word-vector is:', self.vector_size)
 
     def __getitem__(self, item):
         assert type(item) is str
-        item = item.lower()
+        item = item.lower().replace('/', '').replace('-', '').replace('\\', '').replace('`', '')
+        if len(item) == 0 or ' ' in item:
+            raise KeyError('Could not process: ' + item)
+
         if not item.endswith('\n'):
             item += '\n'
 
         item = item.encode('utf-8')
         self.model.stdin.write(item)
+        self.model.stdout.flush()
         result = self.model.stdout.readline()  # Read result
         result = result[len(item):]            # Take everything but the initial item
         result = np.fromstring(result, dtype=np.float32, sep=' ')
 
+        if len(result) != self.vector_size:
+            print('Could not process: ' + item)
+            raise KeyError('Could not process: ' + item)
         return result
