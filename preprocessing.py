@@ -43,9 +43,8 @@ def CoreNLP_tokenizer():
 def initialize_fasttext(fasttext_lib_path, fasttext_model_path):
 
     fasttext_model_path = get_fasttext_model_path(fasttext_model_path)
-    print('Loading fasttext model...', end='')
+    print('Loading fasttext model...')
     model = FastText(fasttext_lib_directory=fasttext_lib_path, fasttext_model_path=fasttext_model_path)
-    print('Done')
 
     def get_word_vector(word):
         try:
@@ -83,9 +82,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--word2vec_path', type=str, default='data/word2vec_from_glove_300.vec',
                         help='Word2Vec vectors file path')
-    parser.add_argument('--fasttext_lib_path', type=str,  # default='./fasttext_model',
-                        help='Path to fastText model, if there is no such model, it will be downloaded automatically')
-    parser.add_argument('--fasttext_model_path', type=str, default='lib/wiki.en.bin',
+    parser.add_argument('--fasttext_lib_path', type=str,
+                        help='Path to fastText library')
+    parser.add_argument('--fasttext_model_path', type=str, default=None,
                         help='Path to fastText model, if there is no such model, it will be downloaded automatically')
     parser.add_argument('--outfile', type=str, default='data/tmp.pkl',
                         help='Desired path to output pickle')

@@ -10,8 +10,9 @@ from keras.utils.data_utils import get_file
 
 
 def custom_objects():
-    from layers import *
-    from model import *
+    from layers import VariationalDropout, SharedWeight, WrappedGRU, \
+        QuestionAttnGRU, helpers, Argmax, PointerGRU, QuestionPooling, SelfAttnGRU, Slice
+    from model import RNet
     return locals()
 
 
@@ -55,15 +56,10 @@ def get_fasttext_model_path(target_path=None):
     # Validate target_path
     if target_path is None:
         target_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'lib')
-        filename = 'wiki.en'
-    elif not os.path.isdir(target_path):
-        # If there is a ready fasttext model, then return it
-        if os.path.exists(target_path):
-            print(target_path, 'Exists... Returning fasttext model')
-            return target_path
-
-        target_path, filename = os.path.split(target_path)
-        filename = filename.replace('.bin', '')
+    elif os.path.exists(target_path):
+        return target_path
+    else:
+        raise FileNotFoundError('No fasttext binary file at: ' + target_path)
 
     fname = '/tmp/wiki.en.zip'
     get_file(fname,
@@ -72,14 +68,7 @@ def get_fasttext_model_path(target_path=None):
              cache_subdir='',
              extract=True)
 
-    target_path += filename
-    if os.path.exists(target_path + '.bin'):
-        # os.remove(fname)
-        # os.remove(target_path + '.vec')
-        print('OK!!!')
-    else:
-        raise FileNotFoundError('binary file of fasttext wasnt extracted properly')
-    return target_path + '.bin'
+    return target_path + '/wiki.en.bin'
 
 
 class FastText(object):
