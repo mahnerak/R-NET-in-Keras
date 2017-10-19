@@ -89,9 +89,10 @@ class FastText(object):
 
     def __getitem__(self, item):
         assert type(item) is str
+        initial_item = item
         item = item.lower().replace('/', '').replace('-', '').replace('\\', '').replace('`', '')
         if len(item) == 0 or ' ' in item:
-            raise KeyError('Could not process: ' + item)
+            raise KeyError('Could not process: ' + initial_item)
 
         if not item.endswith('\n'):
             item += '\n'
@@ -105,5 +106,5 @@ class FastText(object):
 
         if len(result) != self.vector_size:
             print('Could not process: ' + item)
-            raise KeyError('Could not process: ' + item)
+            raise KeyError('Could not process: ' + initial_item)
         return result

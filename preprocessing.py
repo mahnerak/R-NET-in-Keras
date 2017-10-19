@@ -50,7 +50,7 @@ def initialize_fasttext(fasttext_lib_path, fasttext_model_path):
         try:
             return model[word]
         except KeyError as e:
-            print(e)
+            # print(e)
             return np.zeros(model.vector_size)
 
     return get_word_vector
