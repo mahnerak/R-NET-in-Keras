@@ -53,9 +53,13 @@ def get_glove_file_path():
 
 def get_fasttext_model_path(target_path=None):
 
+    file_name = 'en.wiki.bin'
+
     # Validate target_path
     if target_path is None:
         target_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'lib')
+        if os.path.exists(target_path + '/' + file_name):
+            return target_path + '/' + file_name
     elif os.path.exists(target_path):
         return target_path
     else:
@@ -68,7 +72,7 @@ def get_fasttext_model_path(target_path=None):
              cache_subdir='',
              extract=True)
 
-    return target_path + '/wiki.en.bin'
+    return target_path + file_name
 
 
 class FastText(object):
