@@ -53,7 +53,7 @@ def get_glove_file_path():
 
 def get_fasttext_model_path(target_path=None):
 
-    file_name = 'en.wiki.bin'
+    file_name = 'wiki.en.bin'
 
     # Validate target_path
     if target_path is None:
