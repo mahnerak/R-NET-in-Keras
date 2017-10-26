@@ -9,13 +9,14 @@ from os import path
 
 import numpy as np
 from gensim.models import KeyedVectors
+from gensim.models.wrappers import FastText
 from gensim.scripts.glove2word2vec import glove2word2vec
 from keras.preprocessing.sequence import pad_sequences
 from stanford_corenlp_pywrapper.sockwrap import CoreNLP
 from tqdm import tqdm
 from unidecode import unidecode
 
-from utils import CoreNLP_path, get_glove_file_path, get_fasttext_model_path, FastText
+from utils import CoreNLP_path, get_glove_file_path, get_fasttext_model_path
 
 try:
     import cPickle as pickle
@@ -40,11 +41,12 @@ def CoreNLP_tokenizer():
     return tokenize_context
 
 
-def initialize_fasttext(fasttext_lib_path, fasttext_model_path):
+def initialize_fasttext(model_path):
 
-    fasttext_model_path = get_fasttext_model_path(fasttext_model_path)
-    print('Loading fasttext model...')
-    model = FastText(fasttext_lib_directory=fasttext_lib_path, fasttext_model_path=fasttext_model_path)
+    fasttext_model_path = get_fasttext_model_path(target_path=model_path)
+    print('Loading fasttext model...', end='')
+    model = FastText.load_fasttext_format(fasttext_model_path)
+    print('Done')
 
     def get_word_vector(word):
         try:
@@ -82,9 +84,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--word2vec_path', type=str, default='data/word2vec_from_glove_300.vec',
                         help='Word2Vec vectors file path')
-    parser.add_argument('--fasttext_lib_path', type=str,
-                        help='Path to fastText library')
-    parser.add_argument('--fasttext_model_path', type=str, default=None,
+    parser.add_argument('--fasttext_model_path', type=str,
                         help='Path to fastText model, if there is no such model, it will be downloaded automatically')
     parser.add_argument('--outfile', type=str, default='data/tmp.pkl',
                         help='Desired path to output pickle')
@@ -107,11 +107,8 @@ if __name__ == '__main__':
     print('Done!')
 
     # Determine which model to use fasttext or word2vec (Glove)
-    if args.fasttext_lib_path is not None:
-        if not os.path.exists(args.fasttext_lib_path):
-            raise ValueError('There is no fasttext library installed at ' + args.fasttext_lib_path)
-        word_vector = initialize_fasttext(fasttext_lib_path=args.fasttext_lib_path,
-                                          fasttext_model_path=args.fasttext_model_path)
+    if args.fasttext_model_path:
+        word_vector = initialize_fasttext(args.fasttext_model_path)
     else:
         word_vector = word2vec(word2vec_path=args.word2vec_path)
 
